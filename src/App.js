@@ -2,14 +2,17 @@ import React, {useState, useRef, useEffect} from 'react';
 import "./App.css";
 
 const App = () => {
+    const [pixels, setPixels] = useState([]);
     const [state, setState] = useState({
         mouseDown: false,
         pixelsArray: []
     });
+
     const [options, setOptions] = useState({
-       color: '',
-       size: ''
+        color: '',
+        size: 5
     });
+
     const ws = useRef(null);
 
     useEffect(() => {
@@ -19,20 +22,34 @@ const App = () => {
             ws.current.send(JSON.stringify({type: "GET_ALL_PIXELS"}));
         };
 
-        ws.current.onclose = () => console.log("ws connection closed");
         ws.current.onmessage = e => {
             const decodedMessage = JSON.parse(e.data);
             if (decodedMessage.type === "NEW_PIXEL") {
-                setState(messages => [...state.pixelsArray, decodedMessage.pixel]);
+                setPixels(pixels => [...pixels, ...decodedMessage.newPixels]);
             } else if (decodedMessage.type === "ALL_PIXELS") {
-                setState(messages => [...state.pixelsArray, ...decodedMessage.pixels]);
+                setPixels(pixels => [...pixels, ...decodedMessage.pixels]);
             }
         };
+
+        ws.current.onclose = () => console.log("ws connection closed");
 
         return () => ws.current.close();
     }, []);
 
-    const canvas = useRef(null);
+    const canvas = useRef();
+
+    useEffect(() => {
+        pixels.forEach(pixel => {
+            const context = canvas.current.getContext('2d');
+            context.fillStyle = pixel.color;
+            context.beginPath();
+            context.arc(pixel.x, pixel.y, pixel.size, 0, Math.PI * 2, true);
+            context.closePath();
+            context.fill();
+            const imageData = context.createImageData(1, 1);
+            context.putImageData(imageData, pixel.x, pixel.y);
+        });
+    }, [pixels]);
 
     const canvasMouseMoveHandler = event => {
         if (state.mouseDown) {
@@ -45,41 +62,37 @@ const App = () => {
                     pixelsArray: [...prevState.pixelsArray, {
                         x: clientX,
                         y: clientY,
+                        color: options.color,
+                        size: options.size
                     }]
                 };
             });
             const context = canvas.current.getContext('2d');
-            // context.fillStyle = "red;
-            // context.beginPath();
-            // context.arc(clientX, clientY, 12, 0, Math.PI * 2, true);
-            // context.closePath();
-            // context.fill();
+            context.fillStyle = options.color;
+            context.beginPath();
+            context.arc(clientX, clientY, options.size, 0, Math.PI * 2, true);
+            context.closePath();
+            context.fill();
             const imageData = context.createImageData(1, 1);
-            const d = imageData.data;
-            d[0] = 0;
-            d[1] = 0;
-            d[2] = 0;
-            d[3] = 255;
             context.putImageData(imageData, event.clientX, event.clientY);
-            console.log(state.pixelsArray);
         }
     };
+
 
     const mouseDownHandler = event => {
         setState({...state, mouseDown: true});
     };
-
     const mouseUpHandler = event => {
         ws.current.send(JSON.stringify({
-            type: "CREATE_PIXEL",
-            pixels: state.pixelsArray
+            type: "CREATE_PIXELS",
+            newPixels: state.pixelsArray
         }));
         setState({...state, mouseDown: false, pixelsArray: []});
     };
 
     const inputChangeHandler = e => {
-      const name = e.target.name;
-      const value = e.target.value;
+        const name = e.target.name;
+        const value = e.target.value;
         setOptions(prevState => {
             return {...prevState, [name]: value};
         });
