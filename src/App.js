@@ -9,7 +9,7 @@ const App = () => {
     });
 
     const [options, setOptions] = useState({
-        color: 'red',
+        color: '#000000',
         size: 5
     });
 
@@ -91,13 +91,12 @@ const App = () => {
         setState({...state, mouseDown: false, pixelsArray: []});
     };
 
-    const inputChangeHandler = async e => {
+    const inputChangeHandler = e => {
         const name = e.target.name;
         const value = e.target.value;
-       await setOptions(prevState => {
+        setOptions(prevState => {
             return {...prevState, [name]: value};
         });
-
     };
 
     return (
@@ -117,14 +116,16 @@ const App = () => {
                 type="color"
                 className="field"
                 name="color"
-                onClick={inputChangeHandler}
+                value={options.color}
+                onChange={inputChangeHandler}
             />
             <input
                 type="text"
                 className="field"
                 placeholder="Size"
                 name="size"
-                onClick={inputChangeHandler}
+                value={options.size}
+                onChange={inputChangeHandler}
             />
         </>
     );
