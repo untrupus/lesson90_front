@@ -9,7 +9,7 @@ const App = () => {
     });
 
     const [options, setOptions] = useState({
-        color: '',
+        color: 'red',
         size: 5
     });
 
@@ -49,6 +49,8 @@ const App = () => {
             const imageData = context.createImageData(1, 1);
             context.putImageData(imageData, pixel.x, pixel.y);
         });
+
+
     }, [pixels]);
 
     const canvasMouseMoveHandler = event => {
@@ -78,7 +80,6 @@ const App = () => {
         }
     };
 
-
     const mouseDownHandler = event => {
         setState({...state, mouseDown: true});
     };
@@ -90,12 +91,13 @@ const App = () => {
         setState({...state, mouseDown: false, pixelsArray: []});
     };
 
-    const inputChangeHandler = e => {
+    const inputChangeHandler = async e => {
         const name = e.target.name;
         const value = e.target.value;
-        setOptions(prevState => {
+       await setOptions(prevState => {
             return {...prevState, [name]: value};
         });
+
     };
 
     return (
